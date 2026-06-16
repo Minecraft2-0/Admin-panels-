@@ -260,5 +260,54 @@ RunService.RenderStepped:Connect(function(dt)
             flyVel.Velocity = Vector3.new(0, 0, 0)
         end
     else
-        if hum and
-                
+        if hum and not antiRagdoll then hum.PlatformStand = false end
+        if flyVel then flyVel:Destroy() flyVel = nil end
+        if flyGyro then flyGyro:Destroy() flyGyro = nil end
+    end
+
+    -- Анти-Рагдолл
+    if antiRagdoll and hum then
+        hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+    end
+    
+    -- Гигантские Хитбоксы
+    if bigHitboxes then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local eHrp = p.Character.HumanoidRootPart
+                eHrp.Size = Vector3.new(15, 15, 15)
+                eHrp.Transparency = 0.7
+                eHrp.BrickColor = BrickColor.new("Bright blue")
+                eHrp.Material = Enum.Material.Neon
+                eHrp.CanCollide = false
+            end
+        end
+    end
+end)
+
+--// ESP ЦИКЛ //--
+task.spawn(function()
+    while task.wait(0.5) do
+        if esp then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    if not hrp:FindFirstChild("ESP_BOX") then
+                        local billboard = Instance.new("BillboardGui", hrp)
+                        billboard.Name = "ESP_BOX"
+                        billboard.Size = UDim2.new(4, 0, 5.5, 0)
+                        billboard.AlwaysOnTop = true
+                        
+                        local box = Instance.new("Frame", billboard)
+                        box.Size = UDim2.new(1, 0, 1, 0)
+                        box.BackgroundTransparency = 0.5
+                        box.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                        
+                        table.insert(espBoxes, billboard)
+                    end
+                end
+            end
+        end
+    end
+end)
