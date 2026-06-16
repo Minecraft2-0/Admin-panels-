@@ -1,4 +1,4 @@
---// ULTIMATE REWRITTEN ADMIN PANEL (ANTI-BUG MOBILE VERSION) //--
+--// ULTIMATE REWRITTEN ADMIN PANEL (IMMEDIATE PARENTING FIX) //--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -7,37 +7,37 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Полное принудительное удаление старых копий
+-- Жесткое удаление старых копий перед запуском нового кода
 if playerGui:FindFirstChild("AdminPanel") then
     playerGui.AdminPanel:Destroy()
 end
 
---// СОЗДАНИЕ ОСНОВЫ GUI //--
+--// 1. МГНОВЕННОЕ СОЗДАНИЕ И ПОДКЛЮЧЕНИЕ ОСНОВЫ GUI //--
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdminPanel"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = playerGui -- Сразу отправляем в игру!
 
--- Главное окно
+--// 2. МГНОВЕННОЕ СОЗДАНИЕ ГЛАВНОГО ОКНА //--
 local frame = Instance.new("Frame")
 frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 240, 0, 350)
+frame.Size = UDim2.new(0, 240, 0, 340)
 frame.Position = UDim2.new(0.35, 0, 0.15, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 0, 40)
 frame.Active = true
 frame.Draggable = true
-frame.ClipsDescendants = false
 frame.ZIndex = 1
+frame.Parent = gui -- Сразу активируем отображение фрейма!
 
 local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 14)
 frameCorner.Parent = frame
 
--- Заголовок
+-- Заголовок панели
 local title = Instance.new("TextLabel")
 title.Name = "TitleLabel"
 title.Size = UDim2.new(1, 0, 0, 45)
-title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "⚡ ADMIN PANEL ⚡"
 title.TextColor3 = Color3.fromRGB(190, 80, 255)
@@ -59,7 +59,7 @@ closeBtn.TextSize = 20
 closeBtn.ZIndex = 3
 closeBtn.Parent = frame
 
--- Круглая кнопка открытия (Молния)
+-- Круглая плавающая кнопка открытия (Молния)
 local openIndicator = Instance.new("TextButton")
 openIndicator.Name = "OpenIndicator"
 openIndicator.Size = UDim2.new(0, 55, 0, 55)
@@ -71,6 +71,7 @@ openIndicator.Font = Enum.Font.GothamBold
 openIndicator.TextSize = 26
 openIndicator.Visible = false
 openIndicator.ZIndex = 5
+openIndicator.Parent = gui
 
 local indicatorCorner = Instance.new("UICorner")
 indicatorCorner.CornerRadius = UDim.new(1, 0)
@@ -81,9 +82,7 @@ indicatorStroke.Color = Color3.fromRGB(190, 80, 255)
 indicatorStroke.Width = 2
 indicatorStroke.Parent = openIndicator
 
-openIndicator.Parent = gui
-
--- Логика переключения окон
+-- Логика сворачивания интерфейса
 closeBtn.MouseButton1Click:Connect(function()
     frame.Visible = false
     openIndicator.Visible = true
@@ -94,7 +93,7 @@ openIndicator.MouseButton1Click:Connect(function()
     openIndicator.Visible = false
 end)
 
---// ШАБЛОН ДЛЯ СОЗДАНИЯ НАДЕЖНЫХ КНОПОК //--
+--// ФУНКЦИЯ СОЗДАНИЯ КНОПОК ВНУТРИ АКТИВНОГО ФРЕЙМА //--
 local function createMenuButton(text, yPos)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(0, 200, 0, 40)
@@ -104,17 +103,17 @@ local function createMenuButton(text, yPos)
     b.Font = Enum.Font.GothamBold
     b.TextSize = 14
     b.Text = text
-    b.ZIndex = 10 -- Принудительно выводим кнопку на самый верхний слой рендера
+    b.ZIndex = 10
     
     local buttonCorner = Instance.new("UICorner")
     buttonCorner.CornerRadius = UDim.new(0, 10)
     buttonCorner.Parent = b
     
-    b.Parent = frame
+    b.Parent = frame -- Кнопка рендерится мгновенно
     return b
 end
 
---// НАСТРОЙКИ ИЛОГИКА ФУНКЦИЙ //--
+--// НАСТРОЙКИ СИСТЕМ ИЛОГИКА ФУНКЦИЙ //--
 local flying = false
 local noclip = false
 local esp = false
@@ -132,7 +131,7 @@ local function getCharacterData()
     return c, hrp, hum
 end
 
--- Логика полета (Fly) через мобильный джойстик
+-- Мобильный полет (Fly) по вектору камеры
 local function handleFlyLogic()
     if not flying then return end
     local _, hrp, _ = getCharacterData()
@@ -162,7 +161,7 @@ local function handleFlyLogic()
     end
 end
 
--- Логика подсветки игроков (ESP)
+-- Система подсветки (ESP)
 local function applyESP(char)
     if highlights[char] then return end
     if not char:FindFirstChild("HumanoidRootPart") then return end
@@ -183,10 +182,10 @@ local function cleanESP()
     highlights = {}
 end
 
---// ДОБАВЛЕНИЕ ВСЕХ КНОПОК С КРАШ-ТЕСТ КООРДИНАТАМИ Y //--
+--// ДОБАВЛЕНИЕ ВСЕХ КНОПОК ПО ФИКСИРОВАННЫМ СЛОЯМ И ВЫСОТЕ //--
 
--- 1. ПОЛЕТ (Y = 60)
-local flyBtn = createMenuButton("Fly: OFF", 60)
+-- 1. ПОЛЕТ (Y = 55)
+local flyBtn = createMenuButton("Fly: OFF", 55)
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
     if flying then
@@ -200,8 +199,8 @@ flyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 2. НОКЛИП (Y = 115)
-local noclipBtn = createMenuButton("Noclip: OFF", 115)
+-- 2. НОКЛИП (Y = 110)
+local noclipBtn = createMenuButton("Noclip: OFF", 110)
 noclipBtn.MouseButton1Click:Connect(function()
     noclip = not noclip
     if noclip then
@@ -213,8 +212,8 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. КРУТИЛКА-ФЛИНГ (Y = 170)
-local flingBtn = createMenuButton("Fling (Spin): OFF", 170)
+-- 3. КРУТИЛКА-ФЛИНГ (Y = 165)
+local flingBtn = createMenuButton("Fling (Spin): OFF", 165)
 flingBtn.MouseButton1Click:Connect(function()
     spinning = not spinning
     local _, hrp, _ = getCharacterData()
@@ -223,7 +222,6 @@ flingBtn.MouseButton1Click:Connect(function()
         flingBtn.Text = "Fling: ON"
         flingBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
 
-        -- Используем BodyAngularVelocity для 100% совместимости со старыми мобильными ядрами физики
         spinVelocity = Instance.new("BodyAngularVelocity")
         spinVelocity.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
         spinVelocity.AngularVelocity = Vector3.new(0, 800, 0)
@@ -235,8 +233,8 @@ flingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. ЕСП СИСТЕМА (Y = 225)
-local espBtn = createMenuButton("ESP: OFF", 225)
+-- 4. ЕСП СИСТЕМА (Y = 220)
+local espBtn = createMenuButton("ESP: OFF", 220)
 espBtn.MouseButton1Click:Connect(function()
     esp = not esp
     if esp then
@@ -249,8 +247,8 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. МЕГА СКОРОСТЬ И ПРЫЖОК (Y = 280)
-local funnyBtn = createMenuButton("😂 FUN SPEED/JUMP", 280)
+-- 5. МЕГА СКОРОСТЬ И ПРЫЖОК (Y = 275)
+local funnyBtn = createMenuButton("😂 FUN SPEED/JUMP", 275)
 funnyBtn.MouseButton1Click:Connect(function()
     local _, _, hum = getCharacterData()
     if hum then
@@ -260,11 +258,7 @@ funnyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Включение GUI в дерево игры
-frame.Parent = gui
-gui.Parent = playerGui
-
---// ИСПОЛНИТЕЛЬНЫЕ ПОТОКИ (LOOPS) //--
+--// ИСПОЛНИТЕЛЬНЫЕ РАБОЧИЕ ЦИКЛЫ //--
 RunService.Stepped:Connect(function()
     handleFlyLogic()
     
@@ -292,3 +286,5 @@ task.spawn(function()
         task.wait(1.5)
     end
 end)
+
+print("--- [ADMIN PANEL LOADED SUCCESSFULLY] ---")
