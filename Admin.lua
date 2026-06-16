@@ -1,52 +1,56 @@
---// FULL ADMIN PANEL + ESP + FUN SYSTEM (STABLE FIXED) //--
+--// FULL UNABRIDGED ADMIN PANEL + ESP + SPIN FLING + FUN SYSTEM //--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Удаляем старый GUI при перезапуске
+-- Полная очистка предыдущих копий GUI
 if playerGui:FindFirstChild("AdminPanel") then
     playerGui.AdminPanel:Destroy()
 end
 
---// GUI //--
+--// ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА (ПОЛНЫЙ РАЗМЕР) //--
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AdminPanel"
 gui.ResetOnSpawn = false
 
--- Главное окно панели
+-- Главный фрейм панели
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 240, 0, 310) -- Оптимальный размер под мобилки
-frame.Position = UDim2.new(0.3, 0, 0.15, 0)
+frame.Size = UDim2.new(0, 260, 0, 380)
+frame.Position = UDim2.new(0.3, 0, 0.2, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 0, 40)
 frame.Active = true
 frame.Draggable = true
+frame.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+local frameCorner = Instance.new("UICorner", frame)
+frameCorner.CornerRadius = UDim.new(0, 14)
 
--- Заголовок
+-- Заголовок панели
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 40)
+title.Size = UDim2.new(1, 0, 0, 45)
 title.BackgroundTransparency = 1
 title.Text = "⚡ ADMIN PANEL ⚡"
 title.TextColor3 = Color3.fromRGB(190, 80, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
+title.Position = UDim2.new(0, 0, 0, 0)
 
 -- Кнопка закрытия (Крестик)
 local closeBtn = Instance.new("TextButton", frame)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.Position = UDim2.new(1, -35, 0, 7)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "✕"
 closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 20
 
--- Иконка открытия (Молния)
+-- Иконка открытия (Маленькая круглая кнопка-молния на экране)
 local openIndicator = Instance.new("TextButton", gui)
 openIndicator.Size = UDim2.new(0, 55, 0, 55)
 openIndicator.Position = UDim2.new(0, 15, 0, 15)
@@ -54,15 +58,17 @@ openIndicator.BackgroundColor3 = Color3.fromRGB(25, 0, 40)
 openIndicator.Text = "⚡"
 openIndicator.TextColor3 = Color3.fromRGB(190, 80, 255)
 openIndicator.Font = Enum.Font.GothamBold
-openIndicator.TextSize = 24
+openIndicator.TextSize = 26
 openIndicator.Visible = false
-Instance.new("UICorner", openIndicator).CornerRadius = UDim.new(1, 0)
 
-local stroke = Instance.new("UIStroke", openIndicator)
-stroke.Color = Color3.fromRGB(190, 80, 255)
-stroke.Width = 2
+local indicatorCorner = Instance.new("UICorner", openIndicator)
+indicatorCorner.CornerRadius = UDim.new(1, 0)
 
--- Логика скрыть/показать
+local indicatorStroke = Instance.new("UIStroke", openIndicator)
+indicatorStroke.Color = Color3.fromRGB(190, 80, 255)
+indicatorStroke.Width = 2
+
+-- Логика скрытия и показа основного окна
 closeBtn.MouseButton1Click:Connect(function()
     frame.Visible = false
     openIndicator.Visible = true
@@ -73,21 +79,36 @@ openIndicator.MouseButton1Click:Connect(function()
     openIndicator.Visible = false
 end)
 
--- Функция создания кнопок (теперь создаются прямо во Frame!)
-local function createButton(text, y)
-    local b = Instance.new("TextButton", frame)
-    b.Size = UDim2.new(0.9, 0, 0, 35)
-    b.Position = UDim2.new(0.05, 0, 0, y)
+-- Специальный внутренний контейнер во избежание багов рендеринга на мобильных
+local buttonContainer = Instance.new("Frame", frame)
+buttonContainer.Size = UDim2.new(0.9, 0, 0.8, 0)
+buttonContainer.Position = UDim2.new(0.05, 0, 0.15, 0)
+buttonContainer.BackgroundTransparency = 1
+
+-- UIListLayout гарантирует, что кнопки автоматически выстроятся по вертикали и не пропадут
+local listLayout = Instance.new("UIListLayout", buttonContainer)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 10)
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Универсальная функция сборки кнопок
+local function createButton(text, order)
+    local b = Instance.new("TextButton", buttonContainer)
+    b.Size = UDim2.new(1, 0, 0, 40)
     b.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
     b.TextColor3 = Color3.fromRGB(255, 255, 255)
     b.Font = Enum.Font.GothamBold
     b.TextSize = 14
     b.Text = text
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+    b.LayoutOrder = order
+    
+    local buttonCorner = Instance.new("UICorner", b)
+    buttonCorner.CornerRadius = UDim.new(0, 10)
+    
     return b
 end
 
---// СОСТОЯНИЯ //--
+--// ИГРОВЫЕ ПЕРЕМЕННЫЕ И СОСТОЯНИЯ (ПОЛНЫЙ НАБОР) //--
 local flying = false
 local noclip = false
 local esp = false
@@ -98,17 +119,18 @@ local flyGyro = nil
 local spinVelocity = nil
 local highlights = {}
 
-local function getCharAndHRP()
+-- Поиск компонентов персонажа
+local function getCharAndParts()
     local c = player.Character
     local hrp = c and c:FindFirstChild("HumanoidRootPart")
     local hum = c and c:FindFirstChildOfClass("Humanoid")
     return c, hrp, hum
 end
 
---// FLY //--
-local function updateFly()
+--// ПОЛНАЯ МОБИЛЬНАЯ ЛОГИКА ПОЛЕТА (FLY) //--
+local function handleFlying()
     if not flying then return end
-    local _, hrp, _ = getCharAndHRP()
+    local _, hrp, _ = getCharAndParts()
     if not hrp then return end
 
     local cam = workspace.CurrentCamera
@@ -133,7 +155,7 @@ local function updateFly()
     end
 end
 
---// ESP //--
+--// ПОЛНАЯ ЛОГИКА СИСТЕМЫ ESP //--
 local function addESP(char)
     if highlights[char] then return end
     if not char:FindFirstChild("HumanoidRootPart") then return end
@@ -163,8 +185,10 @@ local function refreshESP()
     end
 end
 
---// КНОПКИ (С точными координатами Y) //--
-local flyBtn = createButton("Fly: OFF", 50)
+--// СОЗДАНИЕ КНОПОК И ПОДКЛЮЧЕНИЕ ФУНКЦИЙ //--
+
+-- 1. Кнопка Полета
+local flyBtn = createButton("Fly: OFF", 1)
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
     if flying then
@@ -178,7 +202,8 @@ flyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local noclipBtn = createButton("Noclip: OFF", 100)
+-- 2. Кнопка Ноклипа
+local noclipBtn = createButton("Noclip: OFF", 2)
 noclipBtn.MouseButton1Click:Connect(function()
     noclip = not noclip
     if noclip then
@@ -190,10 +215,11 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local flingBtn = createButton("Fling (Spin): OFF", 150)
+-- 3. Кнопка Мощного Флинга (Бешеное Вращение для отталкивания)
+local flingBtn = createButton("Fling (Spin): OFF", 3)
 flingBtn.MouseButton1Click:Connect(function()
     spinning = not spinning
-    local _, hrp, _ = getCharAndHRP()
+    local _, hrp, _ = getCharAndParts()
 
     if spinning and hrp then
         flingBtn.Text = "Fling: ON"
@@ -201,7 +227,7 @@ flingBtn.MouseButton1Click:Connect(function()
 
         spinVelocity = Instance.new("AngularVelocity", hrp)
         spinVelocity.Attachment0 = hrp:FindFirstChildOfClass("Attachment") or Instance.new("Attachment", hrp)
-        spinVelocity.AngularVelocity = Vector3.new(0, 500, 0)
+        spinVelocity.AngularVelocity = Vector3.new(0, 600, 0)
         spinVelocity.MaxTorque = 1e9
     else
         flingBtn.Text = "Fling: OFF"
@@ -210,7 +236,8 @@ flingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local espBtn = createButton("ESP: OFF", 200)
+-- 4. Кнопка Системы ESP
+local espBtn = createButton("ESP: OFF", 4)
 espBtn.MouseButton1Click:Connect(function()
     esp = not esp
     if esp then
@@ -223,9 +250,10 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local funnyBtn = createButton("😂 FUN SPEED/JUMP", 250)
+-- 5. Кнопка Кастомного Fun Набора (Скорость бега + Высота Прыжка)
+local funnyBtn = createButton("😂 FUN SPEED/JUMP", 5)
 funnyBtn.MouseButton1Click:Connect(function()
-    local _, _, hum = getCharAndHRP()
+    local _, _, hum = getCharAndParts()
     if hum then
         hum.WalkSpeed = 120
         hum.JumpPower = 180
@@ -233,10 +261,13 @@ funnyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---// ЦИКЛЫ //--
+--// ПОЛНЫЕ СИСТЕМНЫЕ ИСПОЛНИТЕЛЬНЫЕ ЦИКЛЫ //--
+
 RunService.Stepped:Connect(function()
-    updateFly()
-    local char, _, _ = getCharAndHRP()
+    handleFlying()
+    
+    -- Полная итерация ноклипа по всем частям тела
+    local char, _, _ = getCharAndParts()
     if noclip and char then
         for _, v in pairs(char:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -246,9 +277,14 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- Фоновый бесконечный цикл обновлений ESP без нагрузки на ЦП
 task.spawn(function()
     while true do
-        if esp then refreshESP() else clearESP() end
+        if esp then 
+            refreshESP() 
+        else 
+            clearESP() 
+        end
         task.wait(1.5)
     end
 end)
