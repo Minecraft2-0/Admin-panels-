@@ -1,31 +1,29 @@
---// FULL UNABRIDGED ADMIN PANEL + ESP + SPIN FLING + FUN SYSTEM //--
+--// FULL UNABRIDGED FIXED ADMIN PANEL (DIRECT RENDERING FOR MOBILE) //--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Полная очистка предыдущих копий GUI
+-- Полная очистка предыдущих копий GUI, чтобы не наслаивались
 if playerGui:FindFirstChild("AdminPanel") then
     playerGui.AdminPanel:Destroy()
 end
 
---// ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА (ПОЛНЫЙ РАЗМЕР) //--
+--// ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА //--
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AdminPanel"
 gui.ResetOnSpawn = false
 
--- Главный фрейм панели
+-- Главный фрейм панели (Размеры оптимизированы, чтобы вместить все кнопки)
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 380)
-frame.Position = UDim2.new(0.3, 0, 0.2, 0)
+frame.Size = UDim2.new(0, 250, 0, 320)
+frame.Position = UDim2.new(0.35, 0, 0.15, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 0, 40)
 frame.Active = true
 frame.Draggable = true
-frame.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local frameCorner = Instance.new("UICorner", frame)
 frameCorner.CornerRadius = UDim.new(0, 14)
@@ -38,7 +36,6 @@ title.Text = "⚡ ADMIN PANEL ⚡"
 title.TextColor3 = Color3.fromRGB(190, 80, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
-title.Position = UDim2.new(0, 0, 0, 0)
 
 -- Кнопка закрытия (Крестик)
 local closeBtn = Instance.new("TextButton", frame)
@@ -79,28 +76,16 @@ openIndicator.MouseButton1Click:Connect(function()
     openIndicator.Visible = false
 end)
 
--- Специальный внутренний контейнер во избежание багов рендеринга на мобильных
-local buttonContainer = Instance.new("Frame", frame)
-buttonContainer.Size = UDim2.new(0.9, 0, 0.8, 0)
-buttonContainer.Position = UDim2.new(0.05, 0, 0.15, 0)
-buttonContainer.BackgroundTransparency = 1
-
--- UIListLayout гарантирует, что кнопки автоматически выстроятся по вертикали и не пропадут
-local listLayout = Instance.new("UIListLayout", buttonContainer)
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 10)
-listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- Универсальная функция сборки кнопок
-local function createButton(text, order)
-    local b = Instance.new("TextButton", buttonContainer)
-    b.Size = UDim2.new(1, 0, 0, 40)
+-- Функция создания кнопок НАПРЯМУЮ во Frame (Защита от багов мобильного рендера)
+local function createButton(text, yPosition)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(0.9, 0, 0, 40)
+    b.Position = UDim2.new(0.05, 0, 0, yPosition)
     b.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
     b.TextColor3 = Color3.fromRGB(255, 255, 255)
     b.Font = Enum.Font.GothamBold
     b.TextSize = 14
     b.Text = text
-    b.LayoutOrder = order
     
     local buttonCorner = Instance.new("UICorner", b)
     buttonCorner.CornerRadius = UDim.new(0, 10)
@@ -108,7 +93,7 @@ local function createButton(text, order)
     return b
 end
 
---// ИГРОВЫЕ ПЕРЕМЕННЫЕ И СОСТОЯНИЯ (ПОЛНЫЙ НАБОР) //--
+--// ИГРОВЫЕ ПЕРЕМЕННЫЕ И СОСТОЯНИЯ //--
 local flying = false
 local noclip = false
 local esp = false
@@ -155,7 +140,7 @@ local function handleFlying()
     end
 end
 
---// ПОЛНАЯ ЛОГИКА СИСТЕМЫ ESP //--
+--// ЛОГИКА СИСТЕМЫ ESP //--
 local function addESP(char)
     if highlights[char] then return end
     if not char:FindFirstChild("HumanoidRootPart") then return end
@@ -185,10 +170,10 @@ local function refreshESP()
     end
 end
 
---// СОЗДАНИЕ КНОПОК И ПОДКЛЮЧЕНИЕ ФУНКЦИЙ //--
+--// СОЗДАНИЕ КНОПОК НА ПРЯМЫХ КООРДИНАТАХ Y //--
 
 -- 1. Кнопка Полета
-local flyBtn = createButton("Fly: OFF", 1)
+local flyBtn = createButton("Fly: OFF", 50)
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
     if flying then
@@ -203,7 +188,7 @@ flyBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 2. Кнопка Ноклипа
-local noclipBtn = createButton("Noclip: OFF", 2)
+local noclipBtn = createButton("Noclip: OFF", 100)
 noclipBtn.MouseButton1Click:Connect(function()
     noclip = not noclip
     if noclip then
@@ -215,8 +200,8 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. Кнопка Мощного Флинга (Бешеное Вращение для отталкивания)
-local flingBtn = createButton("Fling (Spin): OFF", 3)
+-- 3. Кнопка Жесткого Флинга (Крутилка торса)
+local flingBtn = createButton("Fling (Spin): OFF", 150)
 flingBtn.MouseButton1Click:Connect(function()
     spinning = not spinning
     local _, hrp, _ = getCharAndParts()
@@ -237,7 +222,7 @@ flingBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 4. Кнопка Системы ESP
-local espBtn = createButton("ESP: OFF", 4)
+local espBtn = createButton("ESP: OFF", 200)
 espBtn.MouseButton1Click:Connect(function()
     esp = not esp
     if esp then
@@ -250,8 +235,8 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. Кнопка Кастомного Fun Набора (Скорость бега + Высота Прыжка)
-local funnyBtn = createButton("😂 FUN SPEED/JUMP", 5)
+-- 5. Кнопка Кастомного Fun Набора
+local funnyBtn = createButton("😂 FUN SPEED/JUMP", 250)
 funnyBtn.MouseButton1Click:Connect(function()
     local _, _, hum = getCharAndParts()
     if hum then
@@ -261,12 +246,11 @@ funnyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---// ПОЛНЫЕ СИСТЕМНЫЕ ИСПОЛНИТЕЛЬНЫЕ ЦИКЛЫ //--
+--// СИСТЕМНЫЕ ЦИКЛЫ //--
 
 RunService.Stepped:Connect(function()
     handleFlying()
     
-    -- Полная итерация ноклипа по всем частям тела
     local char, _, _ = getCharAndParts()
     if noclip and char then
         for _, v in pairs(char:GetDescendants()) do
@@ -277,7 +261,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Фоновый бесконечный цикл обновлений ESP без нагрузки на ЦП
 task.spawn(function()
     while true do
         if esp then 
