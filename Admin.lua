@@ -1,34 +1,33 @@
---// FULL ADMIN PANEL + ESP + FUN SYSTEM (MOBILE & MOBILE EMULATOR COMPATIBLE) //--
+--// FULL ADMIN PANEL + ESP + FUN SYSTEM (STABLE FIXED) //--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Защита от повторного запуска (удаляем старый GUI, если он был)
+-- Удаляем старый GUI при перезапуске
 if playerGui:FindFirstChild("AdminPanel") then
     playerGui.AdminPanel:Destroy()
 end
 
---// GUI СОЗДАНИЕ //--
+--// GUI //--
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "AdminPanel"
 gui.ResetOnSpawn = false
 
--- Главная панель
+-- Главное окно панели
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 270, 0, 420)
-frame.Position = UDim2.new(0.05, 0, 0.2, 0)
+frame.Size = UDim2.new(0, 240, 0, 310) -- Оптимальный размер под мобилки
+frame.Position = UDim2.new(0.3, 0, 0.15, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 0, 40)
 frame.Active = true
 frame.Draggable = true
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
--- Заголовок панели
+-- Заголовок
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
@@ -47,7 +46,7 @@ closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 18
 
--- Маленькая плавающая кнопка для открытия (Иконка-молния)
+-- Иконка открытия (Молния)
 local openIndicator = Instance.new("TextButton", gui)
 openIndicator.Size = UDim2.new(0, 55, 0, 55)
 openIndicator.Position = UDim2.new(0, 15, 0, 15)
@@ -58,11 +57,12 @@ openIndicator.Font = Enum.Font.GothamBold
 openIndicator.TextSize = 24
 openIndicator.Visible = false
 Instance.new("UICorner", openIndicator).CornerRadius = UDim.new(1, 0)
+
 local stroke = Instance.new("UIStroke", openIndicator)
 stroke.Color = Color3.fromRGB(190, 80, 255)
 stroke.Width = 2
 
--- Логика переключения видимости GUI
+-- Логика скрыть/показать
 closeBtn.MouseButton1Click:Connect(function()
     frame.Visible = false
     openIndicator.Visible = true
@@ -73,16 +73,9 @@ openIndicator.MouseButton1Click:Connect(function()
     openIndicator.Visible = false
 end)
 
--- Контейнер для кнопок (скроллинг)
-local container = Instance.new("ScrollingFrame", frame)
-container.Size = UDim2.new(1, 0, 1, -45)
-container.Position = UDim2.new(0, 0, 0, 40)
-container.BackgroundTransparency = 1
-container.CanvasSize = UDim2.new(0, 0, 0, 320)
-container.ScrollBarThickness = 4
-
+-- Функция создания кнопок (теперь создаются прямо во Frame!)
 local function createButton(text, y)
-    local b = Instance.new("TextButton", container)
+    local b = Instance.new("TextButton", frame)
     b.Size = UDim2.new(0.9, 0, 0, 35)
     b.Position = UDim2.new(0.05, 0, 0, y)
     b.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
@@ -94,7 +87,7 @@ local function createButton(text, y)
     return b
 end
 
---// СОСТОЯНИЯ (STATES) //--
+--// СОСТОЯНИЯ //--
 local flying = false
 local noclip = false
 local esp = false
@@ -105,7 +98,6 @@ local flyGyro = nil
 local spinVelocity = nil
 local highlights = {}
 
---// ФУНКЦИЯ ДЛЯ БЕЗОПАСНОГО ПОЛУЧЕНИЯ ТЕКУЩЕГО ХАРАКТЕРА //--
 local function getCharAndHRP()
     local c = player.Character
     local hrp = c and c:FindFirstChild("HumanoidRootPart")
@@ -113,7 +105,7 @@ local function getCharAndHRP()
     return c, hrp, hum
 end
 
---// ЛОГИКА ФЛАЯ (Адаптировано под мобилки через камеру) //--
+--// FLY //--
 local function updateFly()
     if not flying then return end
     local _, hrp, _ = getCharAndHRP()
@@ -121,7 +113,6 @@ local function updateFly()
 
     local cam = workspace.CurrentCamera
     
-    -- Если гироскопа или велосите нет (например после респавна), создаем их
     if not flyVel or flyVel.Parent ~= hrp then
         flyVel = Instance.new("BodyVelocity", hrp)
         flyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
@@ -133,18 +124,16 @@ local function updateFly()
 
     flyGyro.CFrame = cam.CFrame
 
-    -- Логика движения: на мобилках летит вперед туда, куда смотрит камера.
-    -- Если нажат джойстик или WASD — персонаж плавно летит по направлению взгляда
     local moveVector = UIS:GetMoveVector()
     if moveVector.Magnitude > 0 then
         local direction = (cam.CFrame.RightVector * moveVector.X) + (cam.CFrame.LookVector * -moveVector.Z)
         flyVel.Velocity = direction.Unit * 80
     else
-        flyVel.Velocity = Vector3.new(0, 0, 0) -- зависание на месте
+        flyVel.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
---// ЛОГИКА ESP //--
+--// ESP //--
 local function addESP(char)
     if highlights[char] then return end
     if not char:FindFirstChild("HumanoidRootPart") then return end
@@ -167,27 +156,17 @@ end
 
 local function refreshESP()
     if not esp then return end
-
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= player and p.Character then
             addESP(p.Character)
         end
     end
-
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
-            addESP(obj)
-        end
-    end
 end
 
---// КНОПКИ УПРАВЛЕНИЯ //--
-
-local flyBtn = createButton("Fly: OFF", 10)
+--// КНОПКИ (С точными координатами Y) //--
+local flyBtn = createButton("Fly: OFF", 50)
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
-    local _, hrp, _ = getCharAndHRP()
-
     if flying then
         flyBtn.Text = "Fly: ON"
         flyBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
@@ -199,7 +178,7 @@ flyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local noclipBtn = createButton("Noclip: OFF", 55)
+local noclipBtn = createButton("Noclip: OFF", 100)
 noclipBtn.MouseButton1Click:Connect(function()
     noclip = not noclip
     if noclip then
@@ -211,7 +190,7 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local flingBtn = createButton("Fling (Spin): OFF", 100)
+local flingBtn = createButton("Fling (Spin): OFF", 150)
 flingBtn.MouseButton1Click:Connect(function()
     spinning = not spinning
     local _, hrp, _ = getCharAndHRP()
@@ -220,10 +199,9 @@ flingBtn.MouseButton1Click:Connect(function()
         flingBtn.Text = "Fling: ON"
         flingBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
 
-        -- Создаем бешеную угловую скорость вращения торса
         spinVelocity = Instance.new("AngularVelocity", hrp)
         spinVelocity.Attachment0 = hrp:FindFirstChildOfClass("Attachment") or Instance.new("Attachment", hrp)
-        spinVelocity.AngularVelocity = Vector3.new(0, 450, 0) -- скорость крутилки
+        spinVelocity.AngularVelocity = Vector3.new(0, 500, 0)
         spinVelocity.MaxTorque = 1e9
     else
         flingBtn.Text = "Fling: OFF"
@@ -232,7 +210,7 @@ flingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local espBtn = createButton("ESP: OFF", 145)
+local espBtn = createButton("ESP: OFF", 200)
 espBtn.MouseButton1Click:Connect(function()
     esp = not esp
     if esp then
@@ -245,26 +223,19 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local funnyBtn = createButton("😂 FUN SPEED/JUMP", 190)
+local funnyBtn = createButton("😂 FUN SPEED/JUMP", 250)
 funnyBtn.MouseButton1Click:Connect(function()
     local _, _, hum = getCharAndHRP()
     if hum then
-        -- Если у тебя включена классическая механика прыжков
         hum.WalkSpeed = 120
         hum.JumpPower = 180
-        -- На всякий случай для современных игр с JumpHeight механиками:
-        pcall(function()
-            hum.UseJumpPower = true
-        end)
+        pcall(function() hum.UseJumpPower = true end)
     end
 end)
 
---// ОСНОВНЫЕ ЦИКЛЫ ОБРАБОТКИ (LOOPS) //--
-
+--// ЦИКЛЫ //--
 RunService.Stepped:Connect(function()
     updateFly()
-
-    -- Логика Ноклипа
     local char, _, _ = getCharAndHRP()
     if noclip and char then
         for _, v in pairs(char:GetDescendants()) do
@@ -275,14 +246,9 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Отдельный поток для обновления ESP раз в 1.5 секунды (чтобы не лагало)
 task.spawn(function()
     while true do
-        if esp then
-            refreshESP()
-        else
-            clearESP()
-        end
+        if esp then refreshESP() else clearESP() end
         task.wait(1.5)
     end
 end)
