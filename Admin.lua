@@ -1,254 +1,277 @@
---// ULTIMATE RAW ADMIN PANEL (ZERO BULLSHIT EDITION) //--
+--// ULTIMATE RGB ADMIN PANEL //--
 
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
--- Пытаемся закинуть в CoreGui (защита от античита и багов), если не выйдет — в PlayerGui
-local targetGui = nil
-pcall(function() targetGui = CoreGui end)
-if not targetGui then
-    targetGui = player:WaitForChild("PlayerGui")
+-- Пытаемся закинуть в CoreGui, если экзекутор не дает - кидаем в PlayerGui
+local targetGui = pcall(function() return CoreGui end) and CoreGui or player:WaitForChild("PlayerGui")
+
+if targetGui:FindFirstChild("RGBAdminPanel") then
+    targetGui.RGBAdminPanel:Destroy()
 end
 
--- Жесткая зачистка
-if targetGui:FindFirstChild("RawAdminPanel") then
-    targetGui.RawAdminPanel:Destroy()
-end
-
---// 1. СОЗДАЕМ ВСЁ В ПАМЯТИ (БЕЗ ВЫВОДА НА ЭКРАН) //--
 local gui = Instance.new("ScreenGui")
-gui.Name = "RawAdminPanel"
+gui.Name = "RGBAdminPanel"
 gui.ResetOnSpawn = false
+gui.Parent = targetGui
 
+--// 1. ДИЗАЙН: ОСНОВНОЙ ФРЕЙМ //--
 local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 220, 0, 320)
+frame.Size = UDim2.new(0, 240, 0, 360)
 frame.Position = UDim2.new(0.1, 0, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BorderColor3 = Color3.fromRGB(255, 0, 0) -- Красная рамка для стиля
-frame.BorderSizePixel = 2
+frame.BackgroundColor3 = Color3.fromRGB(45, 10, 65) -- Сочный темно-фиолетовый фон
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
+-- Скругления
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 12)
+frameCorner.Parent = frame
+
+-- РГБ Обводка
+local rgbStroke = Instance.new("UIStroke")
+rgbStroke.Thickness = 3
+rgbStroke.Parent = frame
+
+-- Заголовок
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
-title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "ADMIN PANEL"
-title.TextColor3 = Color3.fromRGB(255, 0, 0)
-title.Font = Enum.Font.SourceSansBold -- Самый базовый шрифт, который не крашнет
-title.TextSize = 20
+title.Text = "⚡ RGB ADMIN ⚡"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
 title.Parent = frame
 
---// 2. ХАРДКОДИМ КАЖДУЮ КНОПКУ ОТДЕЛЬНО //--
+local titleStroke = Instance.new("UIStroke")
+titleStroke.Thickness = 1
+titleStroke.Parent = title
 
--- Кнопка Fly
-local flyBtn = Instance.new("TextButton")
-flyBtn.Size = UDim2.new(0, 180, 0, 40)
-flyBtn.Position = UDim2.new(0, 20, 0, 50)
-flyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-flyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-flyBtn.Text = "Fly: OFF"
-flyBtn.Font = Enum.Font.SourceSansBold
-flyBtn.TextSize = 16
-flyBtn.Parent = frame
+-- Скроллинг для кнопок (чтобы вместилось вообще всё)
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -10, 1, -50)
+scroll.Position = UDim2.new(0, 5, 0, 40)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 4
+scroll.CanvasSize = UDim2.new(0, 0, 0, 400) -- Место под будущие кнопки
+scroll.Parent = frame
 
--- Кнопка Noclip
-local noclipBtn = Instance.new("TextButton")
-noclipBtn.Size = UDim2.new(0, 180, 0, 40)
-noclipBtn.Position = UDim2.new(0, 20, 0, 100)
-noclipBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noclipBtn.Text = "Noclip: OFF"
-noclipBtn.Font = Enum.Font.SourceSansBold
-noclipBtn.TextSize = 16
-noclipBtn.Parent = frame
+-- Автоматическая расстановка кнопок
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 8)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Parent = scroll
 
--- Кнопка Fling
-local flingBtn = Instance.new("TextButton")
-flingBtn.Size = UDim2.new(0, 180, 0, 40)
-flingBtn.Position = UDim2.new(0, 20, 0, 150)
-flingBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-flingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-flingBtn.Text = "Spin Fling: OFF"
-flingBtn.Font = Enum.Font.SourceSansBold
-flingBtn.TextSize = 16
-flingBtn.Parent = frame
+--// 2. ГЕНЕРАТОР КНОПОК //--
+local function createBtn(text)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(80, 20, 110) -- Светло-фиолетовый
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Text = text
+    btn.Parent = scroll
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    
+    return btn
+end
 
--- Кнопка ESP
-local espBtn = Instance.new("TextButton")
-espBtn.Size = UDim2.new(0, 180, 0, 40)
-espBtn.Position = UDim2.new(0, 20, 0, 200)
-espBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-espBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-espBtn.Text = "ESP: OFF"
-espBtn.Font = Enum.Font.SourceSansBold
-espBtn.TextSize = 16
-espBtn.Parent = frame
+-- Создаем кнопки
+local flyBtn = createBtn("Fly: OFF")
+local noclipBtn = createBtn("Noclip: OFF")
+local espBtn = createBtn("ESP Boxes: OFF")
+local flingBtn = createBtn("Spin Fling: OFF")
+local infJumpBtn = createBtn("Inf Jump: OFF")
+local hitboxBtn = createBtn("Big Hitboxes: OFF")
+local speedBtn = createBtn("⚡ Boost Speed/Jump")
+local btoolsBtn = createBtn("🛠️ Give Btools")
 
--- Кнопка Speed/Jump
-local funnyBtn = Instance.new("TextButton")
-funnyBtn.Size = UDim2.new(0, 180, 0, 40)
-funnyBtn.Position = UDim2.new(0, 20, 0, 250)
-funnyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-funnyBtn.TextColor3 = Color3.fromRGB(255, 210, 0)
-funnyBtn.Text = "SPEED & JUMP BOOST"
-funnyBtn.Font = Enum.Font.SourceSansBold
-funnyBtn.TextSize = 16
-funnyBtn.Parent = frame
-
---// 3. ВЫВОД НА ЭКРАН (ТОЛЬКО ПОСЛЕ ТОГО, КАК ВСЁ СОБРАНО) //--
-gui.Parent = targetGui
-
---// 4. ЛОГИКА ЧИТОВ И ПЕРЕМЕННЫЕ //--
-local flying = false
-local noclip = false
-local spinning = false
-local esp = false
-
-local flyVel = nil
-local flyGyro = nil
-local spinVel = nil
+--// 3. ЛОГИКА ФУНКЦИЙ //--
+local flying, noclip, esp, spinning, infJump, bigHitboxes = false, false, false, false, false, false
+local flyVel, flyGyro, spinVel
 local espBoxes = {}
 
--- Fly Логика
+-- FLY (Адаптирован под мобильный джойстик)
 flyBtn.MouseButton1Click:Connect(function()
     flying = not flying
-    if flying then
-        flyBtn.Text = "Fly: ON"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    else
-        flyBtn.Text = "Fly: OFF"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        if flyVel then flyVel:Destroy() flyVel = nil end
-        if flyGyro then flyGyro:Destroy() flyGyro = nil end
-    end
+    flyBtn.Text = "Fly: " .. (flying and "ON" or "OFF")
+    flyBtn.BackgroundColor3 = flying and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
 end)
 
--- Noclip Логика
+-- NOCLIP
 noclipBtn.MouseButton1Click:Connect(function()
     noclip = not noclip
-    if noclip then
-        noclipBtn.Text = "Noclip: ON"
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    else
-        noclipBtn.Text = "Noclip: OFF"
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end
+    noclipBtn.Text = "Noclip: " .. (noclip and "ON" or "OFF")
+    noclipBtn.BackgroundColor3 = noclip and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
 end)
 
--- Fling Логика
-flingBtn.MouseButton1Click:Connect(function()
-    spinning = not spinning
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if spinning and hrp then
-        flingBtn.Text = "Spin Fling: ON"
-        flingBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        spinVel = Instance.new("BodyAngularVelocity")
-        spinVel.MaxTorque = Vector3.new(100000, 100000, 100000)
-        spinVel.AngularVelocity = Vector3.new(0, 1000, 0)
-        spinVel.Parent = hrp
-    else
-        flingBtn.Text = "Spin Fling: OFF"
-        flingBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        if spinVel then spinVel:Destroy() spinVel = nil end
-    end
-end)
-
--- ESP Логика (Безопасная версия без Highlight, который тоже может крашить)
+-- ESP BOXES
 espBtn.MouseButton1Click:Connect(function()
     esp = not esp
-    if esp then
-        espBtn.Text = "ESP: ON"
-        espBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    else
-        espBtn.Text = "ESP: OFF"
-        espBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        for _, box in pairs(espBoxes) do
-            if box then box:Destroy() end
-        end
+    espBtn.Text = "ESP Boxes: " .. (esp and "ON" or "OFF")
+    espBtn.BackgroundColor3 = esp and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
+    if not esp then
+        for _, box in pairs(espBoxes) do if box then box:Destroy() end end
         espBoxes = {}
     end
 end)
 
--- Speed Логика
-funnyBtn.MouseButton1Click:Connect(function()
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.WalkSpeed = 100
-        hum.JumpPower = 150
-        pcall(function() hum.UseJumpPower = true end)
+-- SPIN FLING
+flingBtn.MouseButton1Click:Connect(function()
+    spinning = not spinning
+    flingBtn.Text = "Spin Fling: " .. (spinning and "ON" or "OFF")
+    flingBtn.BackgroundColor3 = spinning and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if spinning and hrp then
+        spinVel = Instance.new("BodyAngularVelocity", hrp)
+        spinVel.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+        spinVel.AngularVelocity = Vector3.new(0, 1200, 0)
+    else
+        if spinVel then spinVel:Destroy() spinVel = nil end
     end
 end)
 
---// 5. РАБОЧИЕ ЦИКЛЫ //--
-RunService.RenderStepped:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    
-    -- Fly
-    if flying and hrp then
-        local cam = workspace.CurrentCamera
-        if not flyVel or not flyVel.Parent then
-            flyVel = Instance.new("BodyVelocity")
-            flyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-            flyVel.Parent = hrp
-        end
-        if not flyGyro or not flyGyro.Parent then
-            flyGyro = Instance.new("BodyGyro")
-            flyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-            flyGyro.Parent = hrp
-        end
-        
-        flyGyro.CFrame = cam.CFrame
-        local moveVector = UIS:GetMoveVector()
-        if moveVector.Magnitude > 0 then
-            local dir = (cam.CFrame.RightVector * moveVector.X) + (cam.CFrame.LookVector * -moveVector.Z)
-            flyVel.Velocity = dir.Unit * 80
-        else
-            flyVel.Velocity = Vector3.new(0, 0, 0)
-        end
+-- INF JUMP
+infJumpBtn.MouseButton1Click:Connect(function()
+    infJump = not infJump
+    infJumpBtn.Text = "Inf Jump: " .. (infJump and "ON" or "OFF")
+    infJumpBtn.BackgroundColor3 = infJump and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
+end)
+
+UIS.JumpRequest:Connect(function()
+    if infJump and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+        player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
-    
-    -- Noclip
-    if noclip then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+end)
+
+-- BIG HITBOXES (Расширяет врагов)
+hitboxBtn.MouseButton1Click:Connect(function()
+    bigHitboxes = not bigHitboxes
+    hitboxBtn.Text = "Big Hitboxes: " .. (bigHitboxes and "ON" or "OFF")
+    hitboxBtn.BackgroundColor3 = bigHitboxes and Color3.fromRGB(120, 40, 160) or Color3.fromRGB(80, 20, 110)
+    if not bigHitboxes then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                p.Character.HumanoidRootPart.Transparency = 1
             end
         end
     end
 end)
 
--- ESP Цикл (создает BillboardGui вместо Highlight для максимальной совместимости)
+-- SPEED & JUMP BOOST
+speedBtn.MouseButton1Click:Connect(function()
+    local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = 120
+        hum.JumpPower = 150
+        pcall(function() hum.UseJumpPower = true end)
+    end
+end)
+
+-- BTOOLS
+btoolsBtn.MouseButton1Click:Connect(function()
+    local tools = {"Clone", "Hammer", "Grab"}
+    for _, tool in pairs(tools) do
+        local bin = Instance.new("HopperBin")
+        bin.BinType = Enum.BinType[tool]
+        bin.Parent = player.Backpack
+    end
+end)
+
+--// 4. ГЛАВНЫЙ ЦИКЛ РЕНДЕРА И РГБ ПЕРЕЛИВАНИЯ //--
+local hue = 0
+RunService.RenderStepped:Connect(function(dt)
+    -- Плавное РГБ переливание рамки
+    hue = hue + dt * 0.3
+    if hue > 1 then hue = 0 end
+    local rainbow = Color3.fromHSV(hue, 1, 1)
+    rgbStroke.Color = rainbow
+    titleStroke.Color = rainbow
+
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    
+    -- Мобильный Флай (Работает от джойстика)
+    if flying and hrp and hum then
+        hum.PlatformStand = true
+        if not flyVel or flyVel.Parent ~= hrp then
+            if flyVel then flyVel:Destroy() end
+            flyVel = Instance.new("BodyVelocity", hrp)
+            flyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        end
+        if not flyGyro or flyGyro.Parent ~= hrp then
+            if flyGyro then flyGyro:Destroy() end
+            flyGyro = Instance.new("BodyGyro", hrp)
+            flyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+        end
+        
+        local cam = workspace.CurrentCamera
+        flyGyro.CFrame = cam.CFrame
+        
+        -- Если тянешь джойстик - летишь туда, куда направлена камера
+        if hum.MoveDirection.Magnitude > 0 then
+            flyVel.Velocity = cam.CFrame.LookVector * 65
+        else
+            flyVel.Velocity = Vector3.new(0, 0, 0)
+        end
+    else
+        if hum then hum.PlatformStand = false end
+        if flyVel then flyVel:Destroy() flyVel = nil end
+        if flyGyro then flyGyro:Destroy() flyGyro = nil end
+    end
+
+    -- Ноклип
+    if noclip then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+    
+    -- Гигантские Хитбоксы
+    if bigHitboxes then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local eHrp = p.Character.HumanoidRootPart
+                eHrp.Size = Vector3.new(15, 15, 15)
+                eHrp.Transparency = 0.7
+                eHrp.BrickColor = BrickColor.new("Bright blue")
+                eHrp.Material = Enum.Material.Neon
+                eHrp.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- ESP Цикл
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         if esp then
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = p.Character.HumanoidRootPart
                     if not hrp:FindFirstChild("ESP_BOX") then
-                        local billboard = Instance.new("BillboardGui")
+                        local billboard = Instance.new("BillboardGui", hrp)
                         billboard.Name = "ESP_BOX"
                         billboard.Size = UDim2.new(4, 0, 5.5, 0)
                         billboard.AlwaysOnTop = true
                         
-                        local frame = Instance.new("Frame")
-                        frame.Size = UDim2.new(1, 0, 1, 0)
-                        frame.BackgroundTransparency = 0.5
-                        frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                        frame.Parent = billboard
+                        local box = Instance.new("Frame", billboard)
+                        box.Size = UDim2.new(1, 0, 1, 0)
+                        box.BackgroundTransparency = 0.5
+                        box.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
                         
-                        billboard.Parent = hrp
                         table.insert(espBoxes, billboard)
                     end
                 end
